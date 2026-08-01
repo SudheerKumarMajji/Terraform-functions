@@ -34,4 +34,9 @@ resource "null_resource" "server" {
 
   }
 
+  provisioner "local-exec" {
+    command = "echo 'Server created with IP: ${aws_instance.public-server.*.public_ip[count.index]}' >> creation_log.txt"
+  }
+
+
 }
