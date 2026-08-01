@@ -17,84 +17,64 @@ resource "aws_vpc" "default" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   tags = {
-    Name  = "${var.vpc_name}"
-    Owner = "Saikiran"
+    Name  = var.vpc_name
+    Owner = "Sudheer"
   }
 }
 
-resource "aws_internet_gateway" "default" {
+resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.default.id
   tags = {
-    Name = "${var.IGW_name}"
+    Name = "${var.vpc_name}-IGW"
   }
 }
 
-resource "aws_subnet" "subnet1-public" {
+resource "aws_subnet" "public-subnet" {
+  count             = length(var.public_cidr) #3
   vpc_id            = aws_vpc.default.id
-  cidr_block        = var.public_subnet1_cidr
-  availability_zone = "us-east-1a"
+  cidr_block        = var.public_cidr[count.index]
+  availability_zone = var.azs[count.index]
 
   tags = {
-    Name = "${var.public_subnet1_name}"
+    Name = "public-subnet${count.index + 1}"
   }
 }
 
-resource "aws_subnet" "subnet2-public" {
+resource "aws_subnet" "private-subnet" {
+  count             = length(var.private_cidr) # 3
   vpc_id            = aws_vpc.default.id
-  cidr_block        = var.public_subnet2_cidr
-  availability_zone = "us-east-1b"
+  cidr_block        = var.private_cidr[count.index]
+  availability_zone = var.azs[count.index]
 
   tags = {
-    Name = "${var.public_subnet2_name}"
+    Name = "private-subnet${count.index + 1}"
   }
 }
 
-resource "aws_subnet" "subnet3-public" {
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = var.public_subnet3_cidr
-  availability_zone = "us-east-1c"
 
-  tags = {
-    Name = "${var.public_subnet3_name}"
-  }
-
-}
-
-
-resource "aws_route_table" "terraform-public" {
+resource "aws_route_table" "public_rtb" {
   vpc_id = aws_vpc.default.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.default.id
+    gateway_id = aws_internet_gateway.igw.id
   }
 
   tags = {
-    Name = "${var.Main_Routing_Table}"
+    Name = "${var.vpc_name}-public-rtb"
   }
 }
 
-resource "aws_route_table_association" "terraform-public" {
-  subnet_id      = aws_subnet.subnet1-public.id
-  route_table_id = aws_route_table.terraform-public.id
-}
+resource "aws_route_table" "private_rtb" {
+  vpc_id = aws_vpc.default.id
 
-resource "aws_security_group" "allow_all" {
-  name        = "allow_all"
-  description = "Allow all inbound traffic"
-  vpc_id      = aws_vpc.default.id
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  tags = {
+    Name = "${var.vpc_name}-private-rtb"
   }
 }
+
+# resource "aws_route_table_association" "terraform-public" {
+#   subnet_id      = aws_subnet.subnet1-public.id
+#   route_table_id = aws_route_table.terraform-public.id
+# }
+
