@@ -7,3 +7,4 @@ variable "public_cidr" {}
 variable "private_cidr" {}
 variable "environment" {}
 variable "ingress_ports" {}
+variable "amis" {}
